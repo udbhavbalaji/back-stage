@@ -1,0 +1,48 @@
+{
+  "name": "logify",
+  "version": "1.0.0",
+  "description": "A utility package for Typescript and Javascript for advanced, formatted logging for debugging purposes.",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "type": "module",
+  "exports": {
+    "types": "./dist/index.d.ts",
+    "import": "./dist/index.js",
+    "require": "./dist/index.cjs"
+  },
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsup",
+    "clean": "rm -rf dist && tsup",
+    "test": "vitest"
+  },
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/udbhavbalaji/logify.git"
+  },
+  "keywords": [
+    "typescript",
+    "utility",
+    "logging",
+    "debug"
+  ],
+  "author": "Udbhav Balaji",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/udbhavbalaji/logify/issues"
+  },
+  "homepage": "https://github.com/udbhavbalaji/logify#readme",
+  "devDependencies": {
+    "@types/node": "^22.13.5",
+    "tsup": "^8.3.6",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.6"
+  },
+  "dependencies": {
+    "chalk": "^5.4.1"
+  }
+}
