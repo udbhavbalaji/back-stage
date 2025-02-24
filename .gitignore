@@ -128,3 +128,9 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# User defined ignores
+test-package/
+debug_logs/
+dist/
+
