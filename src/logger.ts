@@ -9,16 +9,16 @@ import {
   getTimestamp,
 } from "./internals";
 
-type LogLevel = "debug" | "info" | "warn" | "error";
+export type LogLevel = "debug" | "info" | "warn" | "error";
 
-interface LoggerOptions {
+export interface LoggerOptions {
   level: LogLevel;
   context?: string;
   withTime: boolean;
   logDirName: string;
 }
 
-const defaultOptions: LoggerOptions = {
+export const defaultOptions: LoggerOptions = {
   level: "info",
   withTime: true,
   logDirName: "debug_logs",
