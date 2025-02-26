@@ -23,66 +23,66 @@ const getDetailedTypes = (
     .join(", ");
   const returnType = typeof result;
 
-  // const finalResult =
-  //   returnType === "object"
-  //     ? getFormattedJSON(result)
-  //     : returnType === "string"
-  //       ? `"${result}"`
-  //       : result;
   const finalReturnType =
     returnType === "object" ? getFormattedJSONTypes(result) : returnType;
 
   return { finalReturnType, finalArgTypes };
 };
 
-const inspectFnFinal = (func: Function, ...args: any[]) => {
-  let finalResult, finalReturnType, finalArgTypes;
-
-  let getDetailedTypesFlag = false;
-
-  if (
-    args.length > 0 &&
-    typeof args[args.length - 1] === "object" &&
-    args[args.length - 1] !== null &&
-    "detailed" in args[args.length - 1]
-  ) {
-    const detailedLevel = args.pop() as { detailed: boolean };
-    getDetailedTypesFlag = detailedLevel.detailed;
-  }
-
+const inspectFnInDetail = <T extends (...args: any[]) => any>(
+  func: T,
+  ...args: Parameters<T>
+) => {
   try {
     const result = func(...args);
-    // const argTypes = args.map((arg) => typeof arg).join(", ");
     const returnType = typeof result;
 
-    finalResult =
+    const finalResult =
       returnType === "object"
         ? getFormattedJSON(result)
         : returnType === "string"
           ? `"${result}"`
           : result;
 
-    if (getDetailedTypesFlag) {
-      // const { finalReturnType, finalArgTypes } = getDetailedTypes(result, args);
-      const detailedTypes = getDetailedTypes(result, args);
-      finalReturnType = detailedTypes.finalReturnType;
-      finalArgTypes = detailedTypes.finalArgTypes;
-    } else {
-      finalReturnType = returnType;
-      finalArgTypes = args.map((arg) => typeof arg).join(", ");
-    }
+    const { finalReturnType, finalArgTypes } = getDetailedTypes(result, args);
 
     const message = `[FnInspection] ${func.name} <${finalArgTypes}> => ${finalResult} <${finalReturnType}>`;
 
-    console.log(getDetailedTypesFlag);
-    console.log(typeof result);
     logger.debug(message);
   } catch (err) {
     logger.error((err as Error).message, (err as Error).stack);
   }
 };
 
-const inspectFn = (func: Function, ...args: any[]) => {
+const inspectFnInDetailAsync = async <T extends (...args: any[]) => any>(
+  func: T,
+  ...args: Parameters<T>
+) => {
+  try {
+    const result = await func(...args);
+    const returnType = typeof result;
+
+    const finalResult =
+      returnType === "object"
+        ? getFormattedJSON(result)
+        : returnType === "string"
+          ? `"${result}"`
+          : result;
+
+    const { finalReturnType, finalArgTypes } = getDetailedTypes(result, args);
+
+    const message = `[FnInspectionAsync] ${func.name} <${finalArgTypes}> => ${finalResult} <${finalReturnType}>`;
+
+    logger.debug(message);
+  } catch (err) {
+    logger.error((err as Error).message, (err as Error).stack);
+  }
+};
+
+const inspectFn = <T extends (...args: any[]) => any>(
+  func: T,
+  ...args: Parameters<T>
+) => {
   try {
     const result = func(...args);
     const argTypes = args.map((arg) => typeof arg).join(", ");
@@ -94,12 +94,32 @@ const inspectFn = (func: Function, ...args: any[]) => {
         : returnType === "string"
           ? `"${result}"`
           : result;
-    const finalReturnType =
-      returnType === "object" ? getFormattedJSONTypes(result) : returnType;
 
-    logger.info(finalReturnType);
+    const message = `[FnInspection] ${func.name} <${argTypes}> => ${finalResult} <${returnType}>`;
 
-    const message = `[FnInspection] ${func.name} <${argTypes}> => ${finalResult} <${finalReturnType}>`;
+    logger.debug(message);
+  } catch (err) {
+    logger.error((err as Error).message, (err as Error).stack);
+  }
+};
+
+const inspectFnAsync = async <T extends (...args: any[]) => any>(
+  func: T,
+  ...args: Parameters<T>
+) => {
+  try {
+    const result = await func(...args);
+    const argTypes = args.map((arg) => typeof arg).join(", ");
+    const returnType = typeof result;
+
+    const finalResult =
+      returnType === "object"
+        ? getFormattedJSON(result)
+        : returnType === "string"
+          ? `"${result}"`
+          : result;
+
+    const message = `[FnInspectionAsync] ${func.name} <${argTypes}> => ${finalResult} <${returnType}>`;
 
     logger.debug(message);
   } catch (err) {
@@ -135,10 +155,13 @@ const inspectMethod = <T, K extends MethodNames<T>>(
   }
 };
 
-const inspectFnAsync = async (func: Function, ...args: any[]) => {
+const inspectMethodInDetail = <T, K extends MethodNames<T>>(
+  instance: T,
+  method: K,
+  ...args: T[K] extends (...args: infer P) => any ? P : never
+) => {
   try {
-    const result = await func(...args);
-    const argTypes = args.map((arg) => typeof arg).join(", ");
+    const result = (instance[method] as Function).apply(instance, args);
     const returnType = typeof result;
 
     const finalResult =
@@ -147,10 +170,10 @@ const inspectFnAsync = async (func: Function, ...args: any[]) => {
         : returnType === "string"
           ? `"${result}"`
           : result;
-    const finalReturnType =
-      returnType === "object" ? getFormattedJSONTypes(result) : returnType;
 
-    const message = `[FnInspectionAsync] ${func.name} <${argTypes}> => ${finalResult} <${finalReturnType}>`;
+    const { finalReturnType, finalArgTypes } = getDetailedTypes(result, args);
+
+    const message = `[MethodInspection] ${method as string} <${finalArgTypes}> => ${finalResult} <${finalReturnType}>`;
 
     logger.debug(message);
   } catch (err) {
@@ -186,10 +209,39 @@ const inspectMethodAsync = async <T, K extends MethodNames<T>>(
   }
 };
 
+const inspectMethodInDetailAsync = async <T, K extends MethodNames<T>>(
+  instance: T,
+  method: K,
+  ...args: T[K] extends (...args: infer P) => any ? P : never
+) => {
+  try {
+    const result = await (instance[method] as Function).apply(instance, args);
+    const returnType = typeof result;
+
+    const finalResult =
+      returnType === "object"
+        ? getFormattedJSON(result)
+        : returnType === "string"
+          ? `"${result}"`
+          : result;
+
+    const { finalReturnType, finalArgTypes } = getDetailedTypes(result, args);
+
+    const message = `[MethodInspectionAsync] ${method as string} <${finalArgTypes}> => ${finalResult} <${finalReturnType}>`;
+
+    logger.debug(message);
+  } catch (err) {
+    logger.error((err as Error).message, (err as Error).stack);
+  }
+};
+
 export {
-  inspectMethodAsync,
-  inspectMethod,
-  inspectFnAsync,
   inspectFn,
-  inspectFnFinal,
+  inspectFnAsync,
+  inspectFnInDetail,
+  inspectFnInDetailAsync,
+  inspectMethod,
+  inspectMethodAsync,
+  inspectMethodInDetail,
+  inspectMethodInDetailAsync,
 };
