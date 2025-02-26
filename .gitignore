@@ -130,7 +130,8 @@ dist
 .pnp.*
 
 # User defined ignores
-test-package/
 debug_logs/
 dist/
+testing.ts
+testing.js
 
