@@ -1,6 +1,8 @@
 import path from "path";
 import fs from "fs";
-import chalk from "chalk";
+import { Chalk } from "chalk";
+
+const chalk = new Chalk();
 
 import {
   ensureDirExists,
@@ -96,7 +98,7 @@ class Logify {
       const context = this.context ? `<ctx: ${this.context}>` : "";
       const logLevel = `[${level}] `;
 
-      const logMessage = timestamp + level + context + message;
+      const logMessage = timestamp + logLevel + context + message;
 
       fs.appendFileSync(logFilePath, logMessage);
     }
