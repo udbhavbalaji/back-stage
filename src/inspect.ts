@@ -1,9 +1,17 @@
 import Logify from "./logger";
 import { getFormattedJSON, getFormattedJSONTypes } from "./utils";
 
-export type MethodNames<T> = {
+type MethodNames<T> = {
   [K in keyof T]: T[K] extends Function ? K : never;
 }[keyof T];
+
+type FnInspectionResult<T extends (...args: any[]) => any> =
+  | ReturnType<T>
+  | undefined;
+
+type MethodInspectionResult<T, K extends MethodNames<T>> =
+  | ReturnType<T[K] extends (...args: any[]) => any ? T[K] : never>
+  | undefined;
 
 const logger = new Logify({ level: "debug" });
 
@@ -32,7 +40,7 @@ const getDetailedTypes = (
 const inspectFnInDetail = <T extends (...args: any[]) => any>(
   func: T,
   ...args: Parameters<T>
-) => {
+): FnInspectionResult<T> => {
   try {
     const result = func(...args);
     const returnType = typeof result;
@@ -49,6 +57,8 @@ const inspectFnInDetail = <T extends (...args: any[]) => any>(
     const message = `[FnInspection] ${func.name} <${finalArgTypes}> => ${finalResult} <${finalReturnType}>`;
 
     logger.debug(message);
+
+    return result;
   } catch (err) {
     logger.error((err as Error).message, (err as Error).stack);
   }
@@ -57,7 +67,7 @@ const inspectFnInDetail = <T extends (...args: any[]) => any>(
 const inspectFnInDetailAsync = async <T extends (...args: any[]) => any>(
   func: T,
   ...args: Parameters<T>
-) => {
+): Promise<FnInspectionResult<T>> => {
   try {
     const result = await func(...args);
     const returnType = typeof result;
@@ -74,6 +84,8 @@ const inspectFnInDetailAsync = async <T extends (...args: any[]) => any>(
     const message = `[FnInspectionAsync] ${func.name} <${finalArgTypes}> => ${finalResult} <${finalReturnType}>`;
 
     logger.debug(message);
+
+    return result;
   } catch (err) {
     logger.error((err as Error).message, (err as Error).stack);
   }
@@ -82,7 +94,7 @@ const inspectFnInDetailAsync = async <T extends (...args: any[]) => any>(
 const inspectFn = <T extends (...args: any[]) => any>(
   func: T,
   ...args: Parameters<T>
-) => {
+): FnInspectionResult<T> => {
   try {
     const result = func(...args);
     const argTypes = args.map((arg) => typeof arg).join(", ");
@@ -98,6 +110,8 @@ const inspectFn = <T extends (...args: any[]) => any>(
     const message = `[FnInspection] ${func.name} <${argTypes}> => ${finalResult} <${returnType}>`;
 
     logger.debug(message);
+
+    return result;
   } catch (err) {
     logger.error((err as Error).message, (err as Error).stack);
   }
@@ -106,7 +120,7 @@ const inspectFn = <T extends (...args: any[]) => any>(
 const inspectFnAsync = async <T extends (...args: any[]) => any>(
   func: T,
   ...args: Parameters<T>
-) => {
+): Promise<FnInspectionResult<T>> => {
   try {
     const result = await func(...args);
     const argTypes = args.map((arg) => typeof arg).join(", ");
@@ -122,6 +136,8 @@ const inspectFnAsync = async <T extends (...args: any[]) => any>(
     const message = `[FnInspectionAsync] ${func.name} <${argTypes}> => ${finalResult} <${returnType}>`;
 
     logger.debug(message);
+
+    return result;
   } catch (err) {
     logger.error((err as Error).message, (err as Error).stack);
   }
@@ -131,7 +147,7 @@ const inspectMethod = <T, K extends MethodNames<T>>(
   instance: T,
   method: K,
   ...args: T[K] extends (...args: infer P) => any ? P : never
-) => {
+): MethodInspectionResult<T, K> => {
   try {
     const result = (instance[method] as Function).apply(instance, args);
 
@@ -144,12 +160,12 @@ const inspectMethod = <T, K extends MethodNames<T>>(
         : returnType === "string"
           ? `"${result}"`
           : result;
-    const finalReturnType =
-      returnType === "object" ? getFormattedJSONTypes(result) : returnType;
 
-    const message = `[MethodInspection] ${method as string} <${argTypes}> => ${finalResult} <${finalReturnType}>`;
+    const message = `[MethodInspection] ${method as string} <${argTypes}> => ${finalResult} <${returnType}>`;
 
     logger.debug(message);
+
+    return result;
   } catch (err) {
     logger.error((err as Error).message, (err as Error).stack);
   }
@@ -159,7 +175,7 @@ const inspectMethodInDetail = <T, K extends MethodNames<T>>(
   instance: T,
   method: K,
   ...args: T[K] extends (...args: infer P) => any ? P : never
-) => {
+): MethodInspectionResult<T, K> => {
   try {
     const result = (instance[method] as Function).apply(instance, args);
     const returnType = typeof result;
@@ -176,6 +192,8 @@ const inspectMethodInDetail = <T, K extends MethodNames<T>>(
     const message = `[MethodInspection] ${method as string} <${finalArgTypes}> => ${finalResult} <${finalReturnType}>`;
 
     logger.debug(message);
+
+    return result;
   } catch (err) {
     logger.error((err as Error).message, (err as Error).stack);
   }
@@ -185,7 +203,7 @@ const inspectMethodAsync = async <T, K extends MethodNames<T>>(
   instance: T,
   method: K,
   ...args: T[K] extends (...args: infer P) => any ? P : never
-) => {
+): Promise<MethodInspectionResult<T, K>> => {
   try {
     const result = await (instance[method] as Function).apply(instance, args);
 
@@ -198,12 +216,12 @@ const inspectMethodAsync = async <T, K extends MethodNames<T>>(
         : returnType === "string"
           ? `"${result}"`
           : result;
-    const finalReturnType =
-      returnType === "object" ? getFormattedJSONTypes(result) : returnType;
 
-    const message = `[MethodInspectionAsync] ${method as string} <${argTypes}> => ${finalResult} <${finalReturnType}>`;
+    const message = `[MethodInspectionAsync] ${method as string} <${argTypes}> => ${finalResult} <${returnType}>`;
 
     logger.debug(message);
+
+    return result;
   } catch (err) {
     logger.error((err as Error).message, (err as Error).stack);
   }
@@ -213,7 +231,7 @@ const inspectMethodInDetailAsync = async <T, K extends MethodNames<T>>(
   instance: T,
   method: K,
   ...args: T[K] extends (...args: infer P) => any ? P : never
-) => {
+): Promise<MethodInspectionResult<T, K>> => {
   try {
     const result = await (instance[method] as Function).apply(instance, args);
     const returnType = typeof result;
@@ -230,6 +248,8 @@ const inspectMethodInDetailAsync = async <T, K extends MethodNames<T>>(
     const message = `[MethodInspectionAsync] ${method as string} <${finalArgTypes}> => ${finalResult} <${finalReturnType}>`;
 
     logger.debug(message);
+
+    return result;
   } catch (err) {
     logger.error((err as Error).message, (err as Error).stack);
   }
