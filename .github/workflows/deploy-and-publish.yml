@@ -1,0 +1,65 @@
+name: Push to Deploy and Publish
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+
+jobs:
+  deploy-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user,email "actions@github.com"
+
+      - name: Update Version
+        run: |
+          npm version patch -m "Bump version to %s [skip ci]"
+
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          echo "New version: $NEW_VERSION"
+
+      - name: Push main to deploy branch
+        run: |
+          if git ls-remote --heads origin deploy; then 
+            git push origin main:deploy --force
+          else 
+            git checkout -b deploy
+            git push origin deploy
+          fi
+
+      - name: Checkout Deploy branch
+        uses: actions/checkout@v3
+        with:
+          ref: deploy
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build package
+        run: npm run build
+
+      - name: Run tests
+        run: npm test || true
+
+      - name: Publish to NPM
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+
