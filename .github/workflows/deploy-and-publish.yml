@@ -65,6 +65,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           title: "Chore: Merge deploy into main after publishing"
           body: 'This pull request merges the deploy branch into main to update the package version after a release.'
+          branch: deploy
           base: main
           head: deploy
           draft: false
