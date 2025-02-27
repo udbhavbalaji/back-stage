@@ -11,15 +11,25 @@ jobs:
   deploy-and-publish:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout main branch
-        uses: actions/checkout@v3
+      - name: Checkout deploy branch
+        uses: actions/checkout@v4
         with:
+          ref: deploy
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configure Git
         run: |
           git config user.name "GitHub Actions Bot"
           git config user,email "actions@github.com"
+
+
+      - name: Merge main into deploy
+        run: |
+          git checkout deploy
+          git merge origin/main -m "Merge main into deploy"
+          git push origin deploy
+
 
       - name: Update Version
         run: |
@@ -28,24 +38,10 @@ jobs:
           NEW_VERSION=$(node -p "require('./package.json').version")
           echo "New version: $NEW_VERSION"
 
-      - name: Push main to deploy branch
-        run: |
-          if git ls-remote --heads origin deploy; then 
-            git push origin main:deploy --force
-          else 
-            git checkout -b deploy
-            git push origin deploy
-          fi
-
-      - name: Checkout Deploy branch
-        uses: actions/checkout@v3
-        with:
-          ref: deploy
-
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '18.x'
+          node-version: '23.x'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
@@ -55,11 +51,20 @@ jobs:
         run: npm run build
 
       - name: Run tests
-        run: npm test || true
+        run: npm test 
 
       - name: Publish to NPM
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          title: "Chore: Merge deploy into main after publishing"
+          body: 'This pull request merges the deploy branch into main to update the package version after a release.'
+          base: main
+          head: deploy
+          draft: false
 
