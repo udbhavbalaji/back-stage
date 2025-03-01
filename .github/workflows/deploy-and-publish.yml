@@ -76,7 +76,8 @@ name: Push to Deploy and Publish
 on:
   push:
     branches:
-      - main
+      # - main
+      - workflow
     paths-ignore:
       - '**.md'
 
