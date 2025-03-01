@@ -108,7 +108,7 @@ jobs:
           if [ "$CURRENT_VERSION" == "$PUBLISHED_VERSION" ]; then
             echo "Versions match. Patching..."
             npm version patch -m "Bump version to %s [skip ci]"
-            git commit -am "Bump version to $(node -p "require('./package.json).version") [skip ci]"
+            git commit -am "Bump version to $(node -p "require('./package.json').version") [skip ci]"
             git push origin main
           else
             echo "Package version already updated. Skipping patch."
