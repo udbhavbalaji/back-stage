@@ -99,7 +99,7 @@ jobs:
 
       - name: Get Current and Published version
         run: |
-          CURRENT_VERSION=$(node -p "require('./package.json).version")
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
           PUBLISHED_VERSION=$(npm show $(node -p "require('./package.json').name") version || echo "0.0.0")
 
           echo "Current Version: $CURRENT_VERSION"
