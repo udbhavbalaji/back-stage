@@ -1,3 +1,76 @@
+# name: Push to Deploy and Publish
+#
+# on:
+#   push:
+#     branches:
+#       - main
+#     paths-ignore:
+#       - '**.md'
+#
+# jobs:
+#   deploy-and-publish:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout deploy branch
+#         uses: actions/checkout@v4
+#         with:
+#           ref: deploy
+#           fetch-depth: 0
+#           token: ${{ secrets.GITHUB_TOKEN }}
+#
+#       - name: Configure Git
+#         run: |
+#           git config user.name "GitHub Actions Bot"
+#           git config user,email "actions@github.com"
+#
+#
+#       - name: Merge main into deploy
+#         run: |
+#           git checkout deploy
+#           git merge origin/main -m "Merge main into deploy"
+#           git push origin deploy
+#
+#
+#       - name: Update Version
+#         run: |
+#           npm version patch -m "Bump version to %s [skip ci]"
+#
+#           NEW_VERSION=$(node -p "require('./package.json').version")
+#           echo "New version: $NEW_VERSION"
+#
+#       - name: Setup Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: '23.x'
+#           registry-url: 'https://registry.npmjs.org'
+#
+#       - name: Install dependencies
+#         run: npm ci
+#
+#       - name: Build package
+#         run: npm run build
+#
+#       - name: Run tests
+#         run: npm test 
+#
+#       - name: Publish to NPM
+#         run: npm publish --access public
+#         env:
+#           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+#
+#       - name: Create Pull Request
+#         uses: peter-evans/create-pull-request@v5
+#         with:
+#           token: ${{ secrets.GITHUB_TOKEN }}
+#           title: "Chore: Merge deploy into main after publishing"
+#           body: 'This pull request merges the deploy branch into main to update the package version after a release.'
+#           base: main
+#           head: deploy
+#           draft: false
+#
+
+#########################################################################
+
 name: Push to Deploy and Publish
 
 on:
@@ -11,10 +84,10 @@ jobs:
   deploy-and-publish:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout deploy branch
+      - name: Checkout main branch
         uses: actions/checkout@v4
         with:
-          ref: deploy
+          ref: main
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -23,20 +96,29 @@ jobs:
           git config user.name "GitHub Actions Bot"
           git config user,email "actions@github.com"
 
-
-      - name: Merge main into deploy
+      - name: Get Current and Published version
         run: |
+          CURRENT_VERSION=$(node -p "require('./package.json).version")
+          PUBLISHED_VERSION=$(npm show $(node -p "require('./package.json').name") version || echo "0.0.0")
+
+          echo "Current Version: $CURRENT_VERSION"
+          echo "Published Version: $PUBLISHED_VERSION"
+
+          if [ "$CURRENT_VERSION" == "$PUBLISHED_VERSION" ]; then
+            echo "Versions match. Patching..."
+            npm version patch -m "Bump version to %s [skip ci]"
+            git commit -am "Bump version to $(node -p "require('./package.json).version") [skip ci]"
+            git push origin main
+          else
+            echo "Package version already updated. Skipping patch."
+          fi
+
+      - name: Checkout deploy branch
+        run: |
+          git fetch origin deploy
           git checkout deploy
           git merge origin/main -m "Merge main into deploy"
           git push origin deploy
-
-
-      - name: Update Version
-        run: |
-          npm version patch -m "Bump version to %s [skip ci]"
-
-          NEW_VERSION=$(node -p "require('./package.json').version")
-          echo "New version: $NEW_VERSION"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -57,14 +139,4 @@ jobs:
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          title: "Chore: Merge deploy into main after publishing"
-          body: 'This pull request merges the deploy branch into main to update the package version after a release.'
-          base: main
-          head: deploy
-          draft: false
 
